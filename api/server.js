@@ -6,7 +6,7 @@ app.use(express.json());
 
 // 🎯 BOT CONFIGURATION
 const token = '8672725665:AAG-XveCMNup-IgWYXsDPAN1kZHwVh4mOzs';
-const adminGroupId = '-1002302830381';
+const adminGroupId = '-4763198006';
 const bot = new TelegramBot(token, { polling: false });
 
 // 🎯 ၁။ GET ROUTE (ဆာဗာ အလုပ်လုပ်မလုပ် Browser မှာ စမ်းသပ်ရန်)
