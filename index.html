@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelloTaxi - All in One Transport</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans pb-10">
+
+    <div class="bg-yellow-400 shadow-md flex justify-between items-center text-black p-4">
+        <h1 class="text-xl font-extrabold tracking-wider">🚖 HELLO TAXI</h1>
+        <select id="userRole" class="bg-white border border-gray-300 font-bold p-2 rounded-lg" onchange="switchRole()">
+            <option value="passenger">ခရီးသည် (Passenger)</option>
+            <option value="driver">ယာဉ်မောင်း (Driver Mode)</option>
+        </select>
+    </div>
+
+    <div class="max-w-md mx-auto mt-4 px-4">
+
+        <div id="passenger-panel" class="space-y-4">
+            
+            <div class="grid grid-cols-4 gap-1 bg-gray-200 p-1 rounded-lg font-bold text-xs text-center">
+                <button id="tab-instant" onclick="toggleService('instant')" class="bg-white p-2 rounded-md shadow-sm text-yellow-600">အနီးဆုံး</button>
+                <button id="tab-hourly" onclick="toggleService('hourly')" class="p-2 rounded-md text-gray-600">နာရီလိုက်</button>
+                <button id="tab-daily" onclick="toggleService('daily')" class="p-2 rounded-md text-gray-600">နယ်ဝေး</button>
+                <button id="tab-truck" onclick="toggleService('truck')" class="p-2 rounded-md text-gray-600">ကုန်တင်</button>
+            </div>
+
+            <div id="form-instant" class="bg-white p-4 rounded-xl shadow space-y-3">
+                <h3 class="font-bold text-gray-700">📍 အနီးဆုံးတက္ကစီ ချက်ချင်းခေါ်မည်</h3>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">လက်ရှိတည်နေရာ (ပစ်ကပ်)</label>
+                    <input type="text" id="ins-pickup" placeholder="ဥပမာ - လှည်းတန်းစင်တာရှေ့" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">သွားမည့်နေရာ (ဒရော့)</label>
+                    <input type="text" id="ins-drop" placeholder="ဥပမာ - ရန်ကုန်အပြည်ပြည်ဆိုင်ရာလေဆိပ်" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">ပေးမည့်ယာဉ်ခစီးခ (ကျပ်)</label>
+                    <input type="number" id="ins-price" placeholder="ဥပမာ - ၇၀၀၀" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                </div>
+                <button onclick="requestInstantRide()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 rounded-xl shadow transition">ခရီးစဉ် တောင်းဆိုမည်</button>
+            </div>
+
+            <div id="form-hourly" class="hidden bg-white p-4 rounded-xl shadow space-y-3">
+                <h3 class="font-bold text-gray-700">🕒 နာရီအလိုက် Private Taxi ငှားရန်</h3>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">ကြာမြင့်မည့် နာရီ ရွေးချယ်ပါ</label>
+                    <select id="hourly-hours" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                        <option value="3">၃ နာရီ (ရန်ကုန်မြို့တွင်း) - ၄၀,၀၀၀ ကျပ်</option>
+                        <option value="6">၆ နာရီ (ရန်ကုန်မြို့တွင်း) - ၇၀,၀၀၀ ကျပ်</option>
+                        <option value="12">၁၂ နာရီ (ရန်ကုန်မြို့တွင်း) - ၁၂၀,၀၀၀ ကျပ်</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">ကြိုဆိုရမည့် နေ့ရက်နှင့် အချိန်</label>
+                    <input type="datetime-local" id="hourly-datetime" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">ကြိုရမည့် တည်နေရာ</label>
+                    <input type="text" id="hourly-pickup" placeholder="ဥပမာ - ဟိုတယ်ဧည့်ခန်းမဆောင်ရှေ့" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                </div>
+                <button onclick="requestHourlyRide()" class="w-full bg-black text-white font-bold py-3 rounded-xl shadow">Book Hourly Taxi</button>
+            </div>
+
+            <div id="form-daily" class="hidden bg-white p-4 rounded-xl shadow space-y-3">
+                <h3 class="font-bold text-gray-700">⛰️ ရက်အလိုက် / နယ်ဝေးခရီးစဉ် ငှားရန်</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold block mb-1">သွားမည့် မြို့/ဒေသ</label>
+                        <input type="text" id="daily-dest" placeholder="ဥပမာ - နေပြည်တော်" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold block mb-1">စတင်မည့်ရက်</label>
+                        <input type="date" id="daily-date" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">ငှားရမ်းမည့် ရက်ပေါင်း</label>
+                    <input type="text" id="daily-days" placeholder="ဥပမာ - ၃ ရက်" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                </div>
+                <button onclick="requestDailyRide()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow">နယ်ဝေးခရီးစဉ် Booking တင်မည်</button>
+            </div>
+
+            <div id="form-truck" class="hidden bg-white p-4 rounded-xl shadow space-y-3">
+                <h3 class="font-bold text-gray-700">🚚 ကုန်တင်ယာဉ် / အိမ်ပြောင်းယာဉ် ငှားရန်</h3>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">ယာဉ်အမျိုးအစား ရွေးချယ်ပါ</label>
+                    <select id="truck-type" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                        <option value="Hijet">Hijet / Mini Truck (ပစ္စည်းအနည်းငယ်)</option>
+                        <option value="Canter 14ft">Canter 14ft (အိမ်ပြောင်း/ပစ္စည်းအလတ်စား)</option>
+                        <option value="6-Wheeler">6-Wheeler 🚚 (ကုန်ပစ္စည်းအကြီးစား)</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold block mb-1">တင်ဆောင်မည့်မြို့</label>
+                        <input type="text" id="truck-pickup" placeholder="ရန်ကုန်" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 font-bold block mb-1">သွားမည့်မြို့</label>
+                        <input type="text" id="truck-drop" placeholder="မန္တလေး" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">သယ်ဆောင်ရမည့် ပစ္စည်းအမျိုးအစား</label>
+                    <textarea id="truck-details" rows="2" placeholder="ဥပမာ - ရေခဲသေတ္တာနှင့် အဝတ်အစားပုံးများ" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm"></textarea>
+                </div>
+                <button onclick="requestTruck()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow">ကုန်တင်ယာဉ် တောင်းဆိုမည်</button>
+            </div>
+
+        </div>
+
+        <div id="driver-panel" class="hidden bg-white p-5 rounded-xl shadow space-y-4">
+            <div class="border-b pb-2">
+                <h2 class="text-lg font-bold text-gray-800">🚖 ယာဉ်မောင်းအဖြစ် အကောင့်ဖွင့်ရန် (KYC)</h2>
+                <p class="text-xs text-gray-500 mt-0.5">အချက်အလက်များကို မှန်ကန်စွာ ဖြည့်သွင်းပေးပါဗျာ။</p>
+            </div>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-600 font-bold block mb-1">ယာဉ်မောင်းအမည်</label>
+                    <input type="text" id="driver-name" placeholder="ဥပမာ - ဦးမောင်မောင်" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 font-bold block mb-1">ဆက်သွယ်ရန် ဖုန်းနံပါတ်</label>
+                    <input type="tel" id="driver-phone" placeholder="ဥပမာ - 0912345678" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 font-bold block mb-1">မောင်းနှင်မည့် ကားအမျိုးအစား</label>
+                    <input type="text" id="driver-car" placeholder="ဥပမာ - Toyota Probox (အဖြူရောင်)" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 font-bold block mb-1">ယာဉ်အမှတ် / ကားနံပါတ်</label>
+                    <input type="text" id="driver-number" placeholder="ဥပမာ - YGN 2A-1234" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 font-bold block mb-1">အဓိက ပြေးဆွဲမည့် မြို့နယ်</label>
+                    <input type="text" id="driver-township" placeholder="ဥပမာ - ကမာရွတ် / လှိုင်" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
+                </div>
+                
+                <button onclick="submitDriverKYC()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow transition mt-2">အချက်အလက်များ တင်သွင်းမည်</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Full screen expanded
+
+        // 1. Switch between Passenger and Driver View
+        function switchRole() {
+            const role = document.getElementById('userRole').value;
+            if (role === 'passenger') {
+                document.getElementById('passenger-panel').classList.remove('hidden');
+                document.getElementById('driver-panel').classList.add('hidden');
+            } else {
+                document.getElementById('passenger-panel').classList.add('hidden');
+                document.getElementById('driver-panel').classList.remove('hidden');
+            }
+        }
+
+        // 2. Switch Passenger Service Tabs
+        function toggleService(type) {
+            const services = ['instant', 'hourly', 'daily', 'truck'];
+            services.forEach(s => {
+                document.getElementById(`form-${s}`).classList.add('hidden');
+                document.getElementById(`tab-${s}`).classList.remove('bg-white', 'text-yellow-600');
+                document.getElementById(`tab-${s}`).classList.add('text-gray-600');
+            });
+            
+            document.getElementById(`form-${type}`).classList.remove('hidden');
+            document.getElementById(`tab-${type}`).classList.add('bg-white', 'text-yellow-600');
+            document.getElementById(`tab-${type}`).classList.remove('text-gray-600');
+        }
+
+        // 3. Submit Driver Registration (KYC)
+        function submitDriverKYC() {
+            const data = {
+                name: document.getElementById('driver-name').value,
+                phone: document.getElementById('driver-phone').value,
+                carType: document.getElementById('driver-car').value,
+                carNumber: document.getElementById('driver-number').value,
+                township: document.getElementById('driver-township').value
+            };
+
+            if(!data.name || !data.phone || !data.carType) {
+                alert("ကျေးဇူးပြု၍ အချက်အလက်များ ပြည့်စုံစွာ ဖြည့်ပေးပါဗျာ။");
+                return;
+            }
+
+            tg.sendData(`driver_register_kyc:${JSON.stringify(data)}`);
+            tg.close();
+        }
+
+        // 4. Request Ride - Instant
+        function requestInstantRide() {
+            const data = {
+                type: "Instant Ride",
+                pickup: document.getElementById('ins-pickup').value,
+                drop: document.getElementById('ins-drop').value,
+                price: document.getElementById('ins-price').value
+            };
+
+            if(!data.pickup || !data.drop || !data.price) {
+                alert("ခရီးစဉ် တောင်းဆိုရန် အချက်အလက်များ ဖြည့်ပေးပါဦး။");
+                return;
+            }
+
+            tg.sendData(`ride_request:${JSON.stringify(data)}`);
+            tg.close();
+        }
+
+        // 5. Request Ride - Hourly
+        function requestHourlyRide() {
+            const data = {
+                type: "Hourly Rental",
+                hours: document.getElementById('hourly-hours').value,
+                datetime: document.getElementById('hourly-datetime').value,
+                pickup: document.getElementById('hourly-pickup').value
+            };
+            tg.sendData(`ride_request:${JSON.stringify(data)}`);
+            tg.close();
+        }
+
+        // 6. Request Ride - Daily/Out of town
+        function requestDailyRide() {
+            const data = {
+                type: "Out of Town (Daily)",
+                destination: document.getElementById('daily-dest').value,
+                startDate: document.getElementById('daily-date').value,
+                days: document.getElementById('daily-days').value
+            };
+            tg.sendData(`ride_request:${JSON.stringify(data)}`);
+            tg.close();
+        }
+
+        // 7. Request Ride - Truck
+        function requestTruck() {
+            const data = {
+                type: "Truck Service",
+                truckType: document.getElementById('truck-type').value,
+                pickup: document.getElementById('truck-pickup').value,
+                drop: document.getElementById('truck-drop').value,
+                details: document.getElementById('truck-details').value
+            };
+            tg.sendData(`ride_request:${JSON.stringify(data)}`);
+            tg.close();
+        }
+    </script>
+</body>
+</html>
